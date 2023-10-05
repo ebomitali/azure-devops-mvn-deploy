@@ -1,0 +1,40 @@
+# Run a maven deploy using user agent build identity
+# as uploader to artifact repository
+# Requirements:
+# - create a feed in Azure DevOps named test-feed
+# - add <azure project name> Build Service (<organization>) as Contributor to the feed
+# - create a pipeline pointing to this file
+
+
+trigger:
+  - none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: MavenDeploy
+  displayName: "Maven deploy to artifact repository"
+  jobs:
+  - job: RunMavenDeploy
+    displayName: "Run maven deploy"
+    steps:
+    - task: MavenAuthenticate@0
+      displayName: 'Maven Authenticate'
+      inputs:
+        artifactsFeeds: sigeafmwk-feed
+    - task: Maven@3
+      displayName: 'Task: maven goal: deploy'
+      inputs:
+        mavenPomFile: 'pom.xml'
+        mavenOptions: '-Xmx3072m'
+        effectivePomSkip: true
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.8'
+        jdkArchitectureOption: 'x64'
+        mavenAuthenticateFeed: true
+        # testResultsFiles: '**/surefire-reports/TEST-*.xml'
+        goals: 'deploy'
+        options: '-DskipTests=true -Dmaven.javadoc.skip=true -B -V'
+        publishJUnitResults: false
+      name: MavenDeploy
